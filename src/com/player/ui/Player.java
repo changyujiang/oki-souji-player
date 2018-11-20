@@ -3,32 +3,48 @@ package com.player.ui;
 import com.sun.istack.internal.Nullable;
 
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 
 import static com.player.ui.Utils.log;
 import static com.player.ui.Utils.readImage;
 import static com.player.ui.Utils.selectFile;
+import static java.awt.BorderLayout.*;
 
-public class Player {
+public class Player implements ChangeListener {
+
+    private final int FPS = 30;
+    private final int mDelay = 33;
 
     @Nullable
-    private File primaryDir;
-
-    @Nullable
-    private File secondaryDir;
+    private File mCurrentDir;
 
     private JFrame mJFrame = new JFrame();
-    private JLabel mLeftVideo = new JLabel();
-    private JLabel mRightVideo = new JLabel();
+    private JLabel mVideoLabel = new JLabel();
+    private JLabel mFrameLabel = new JLabel();
+    private JSlider mSlider = new JSlider(JSlider.HORIZONTAL,
+            1, 9000, 1);
+    private int mCurrentProgress = 0;
+
+    private Font font = new Font("Serif", Font.PLAIN, 15);
+
+    private ActionListener updater = evt -> {
+        if (mCurrentProgress > 9000) {
+            mCurrentProgress = 1;
+        }
+        updateFrame();
+    };
+
+    private Timer primaryTimer = new Timer(mDelay, updater);
 
     public static void main(String[] args) {
         new Player();
-        log("Oki");
+        log("Oki-Player!");
     }
 
     private Player() {
@@ -39,37 +55,26 @@ public class Player {
         initJFrame();
 
         JPanel actionPanel = initActionPanel();
-        JPanel leftVideo = initVideo(0);
-        JPanel rightVideo = initVideo(1);
-
-//        JButton vegFruitBut = new JButton( "Fruit or Veg");
-//        vegFruitBut.addActionListener(event -> {
-//            actionPanel.setVisible(!actionPanel.isVisible());
-//            comboPanel.setVisible(!comboPanel.isVisible());
-//        });
-
-        mJFrame.add(actionPanel, BorderLayout.PAGE_START);
-        mJFrame.add(leftVideo, BorderLayout.LINE_START);
-        mJFrame.add(rightVideo, BorderLayout.LINE_END);
+        JPanel videoPanel = initVideo();
+        mJFrame.add(actionPanel, PAGE_START);
+        mJFrame.add(videoPanel, LINE_START);
         mJFrame.setVisible(true);
     }
 
     private void initJFrame() {
         mJFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         mJFrame.setTitle("Oki Player");
-        mJFrame.setSize(734,408);
+        mJFrame.setSize(500,388);
         mJFrame.setLocationRelativeTo(null);
     }
 
     private JPanel initActionPanel() {
         JPanel panel = new JPanel();
-        panel.setSize(734, 100);
+        panel.setSize(500, 100);
         FlowLayout layout = new FlowLayout();
         panel.setLayout(layout);
 
         setupActionList(panel);
-
-        setupLinkList(panel);
 
         setupButtons(panel);
 
@@ -79,9 +84,8 @@ public class Player {
     private void setupActionList(JPanel panel) {
         JLabel actionLabel = new JLabel("Action:");
         String[] actionOptions = {
-                "Import Primary Video",
-                "Import Secondary Video",
-                "Create new hyperlink"
+                "Import Video",
+                "Go Back"
         };
         JList<String> actionList = new JList<>(actionOptions);
         actionList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -92,11 +96,9 @@ public class Player {
                 if (e.getClickCount() == 1) {
                     int index = actionList.getSelectedIndex();
                     if (index == 0){
-                        importPrimaryVideo();
+                        importVideo();
                     } else if (index == 1) {
-                        importSecondaryVideo();
-                    } else if (index == 2) {
-                        createNewLink();
+                        goBack();
                     }
                 }
             }
@@ -107,78 +109,118 @@ public class Player {
         panel.add(actionList);
     }
 
-    private void importPrimaryVideo() {
-        primaryDir = selectFile(mJFrame);
-        loadFrame(0, 1);
+    private void importVideo() {
+        mCurrentDir = selectFile(mJFrame);
+        mCurrentProgress = 1;
+        startPlay();
     }
 
-    private void importSecondaryVideo() {
-        secondaryDir = selectFile(mJFrame);
-        loadFrame(1, 1);
+    private void goBack() {
+
+    }
+
+    private void navigateTo(String folderPath, int frameNumber) {
+
     }
 
     /**
-     *
-     * @param type primaryVideo 0, secondaryVideo 1
      * @param frameNumber from 1 - 9000
+     * @return bufferedImage
      */
-    private void loadFrame(int type, int frameNumber) {
-        File dir = null;
-        if (type == 0) {
-            dir = primaryDir;
-        } else if (type == 1) {
-            dir = secondaryDir;
-        }
+    private BufferedImage loadFrame(File dir, int frameNumber) {
         if (dir == null) {
-            return;
+            log("Error: dir is null");
+            return null;
         }
         String fileName = dir.getName() + String.format("%04d", frameNumber) + ".rgb";
-        log(fileName);
         String filePath = dir.getAbsolutePath() + File.separator + fileName;
-        log(filePath);
-        BufferedImage image = readImage(filePath);
-        if (type == 0) {
-            mLeftVideo.setIcon(new ImageIcon(image));
-        } else if (type == 1) {
-            mRightVideo.setIcon(new ImageIcon(image));
+        File file = new File(filePath);
+        if (!file.exists()) {
+            log("Error: file: " + filePath + "is not exists.");
+            return null;
         }
+        return readImage(filePath);
     }
 
-    private void createNewLink() {
-
+    private void startPlay() {
+        primaryTimer.start();
     }
 
-    private void setupLinkList(JPanel panel) {
-        JLabel linkLabel = new JLabel("Select Link:");
-        String[] links = {
-                "PlaceHolder1",
-                "PlaceHolder2"
-        };
-        JList<String> linkList = new JList<>(links);
-        linkList.setLayoutOrientation(JList.VERTICAL);
-        panel.add(linkLabel);
-        panel.add(linkList);
+    private void updateFrame() {
+        BufferedImage frame = loadFrame(mCurrentDir, mCurrentProgress);
+        if (frame == null) {
+            log("Error: frame is null.");
+        } else {
+            mVideoLabel.setIcon(new ImageIcon(frame));
+            mFrameLabel.setText("Playing Frame " + mCurrentProgress);
+            if (mCurrentProgress % 100 - 1 == 0) {
+                mSlider.setValue(mCurrentProgress);
+            }
+            mCurrentProgress++;
+        }
     }
 
     private void setupButtons(JPanel panel) {
-        JButton connect_video = new JButton("Connect Video");
-        panel.add(connect_video);
+        JButton resume = new JButton("Play/Resume");
+        resume.addActionListener(e -> {
+            if (!primaryTimer.isRunning()) {
+                primaryTimer.start();
+            }
+        });
+        panel.add(resume);
 
-        JButton save_file = new JButton("Save File");
-        panel.add(save_file);
+        JButton pause = new JButton("Pause");
+        pause.addActionListener(e -> {
+            if (primaryTimer.isRunning()) {
+                primaryTimer.stop();
+            }
+        });
+        panel.add(pause);
+
+        JButton stop = new JButton("Stop");
+        stop.addActionListener(e -> {
+            if (primaryTimer.isRunning()) {
+                primaryTimer.stop();
+            }
+            mCurrentProgress = 1;
+            updateFrame();
+        });
+        panel.add(stop);
     }
 
-    private JPanel initVideo(int type) {
+    private JPanel initVideo() {
         JPanel panel = new JPanel();
+
+        setupSlider();
+
+        // 367, 308
         panel.setSize(367, 308);
-
-        if (type == 0) {
-            panel.add(mLeftVideo);
-        } else if (type == 1) {
-            panel.add(mRightVideo);
-        }
-
+        panel.setLayout(new BorderLayout());
+        panel.add(mVideoLabel, PAGE_START);
+        mFrameLabel.setFont(font);
+        panel.add(mFrameLabel, PAGE_END);
+        panel.add(mSlider);
+        mVideoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        mFrameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        mSlider.setAlignmentX(Component.CENTER_ALIGNMENT);
         return panel;
+    }
+
+    private void setupSlider() {
+        mSlider.addChangeListener(this);
+        mSlider.setMinorTickSpacing(1);
+        mSlider.setMajorTickSpacing(100);
+        mSlider.setPaintTrack(true);
+        mSlider.setBorder(BorderFactory.createEmptyBorder(0,0,10,0));
+        mSlider.setFont(font);
+    }
+
+    /** Listen to the slider. */
+    public void stateChanged(ChangeEvent e) {
+        JSlider source = (JSlider)e.getSource();
+        if (!source.getValueIsAdjusting()) {
+            mCurrentProgress = source.getValue();
+        }
     }
 
 }
