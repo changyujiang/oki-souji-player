@@ -125,32 +125,34 @@ public class Producer {
         }
     }
 
-    private void updateImage(int type, int progress) {
+    private void updateImage(int type, int frameNum) {
         File dir;
-        JLabel image;
-        JLabel frameNumber;
+        JLabel imageLabel;
+        JLabel frameNumText;
         if (type == PRIMARY_VIDEO) {
             dir = primaryDir;
-            image = mPrimaryImage;
-            frameNumber = mPrimaryFrameNumber;
+            imageLabel = mPrimaryImage;
+            frameNumText = mPrimaryFrameNumber;
         } else {
             dir = secondaryDir;
-            image = mSecondaryImage;
-            frameNumber = mSecondaryFrameNumber;
+            imageLabel = mSecondaryImage;
+            frameNumText = mSecondaryFrameNumber;
         }
-        BufferedImage frame = loadFrame(dir, progress);
+        BufferedImage frame = loadFrame(dir, frameNum);
         if (frame == null) {
             log("Error: frame is null.");
         } else {
-            image.setIcon(new ImageIcon(frame));
-            frameNumber.setText("Current Frame " + progress);
+            imageLabel.setIcon(new ImageIcon(frame));
+            frameNumText.setText("Current Frame " + frameNum);
         }
     }
 
+    //TODO
     private void createNewLink() {
 
     }
 
+    //TODO
     private void setupLinkList(JPanel panel) {
         JLabel linkLabel = new JLabel("Select Link:");
         String[] links = {
@@ -171,6 +173,7 @@ public class Producer {
         panel.add(save_file);
     }
 
+    // TODO improve layout setting
     private JPanel initVideo(int type) {
         JPanel panel = new JPanel();
         JSlider jSlider = setupSlider(type);
