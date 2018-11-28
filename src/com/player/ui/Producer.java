@@ -12,41 +12,41 @@ import java.io.File;
 import static com.player.ui.Utils.*;
 import static java.awt.BorderLayout.PAGE_END;
 import static java.awt.BorderLayout.PAGE_START;
+import static java.awt.Cursor.CROSSHAIR_CURSOR;
 
 public class Producer {
-
     private static final int PRIMARY_VIDEO = 0;
     private static final int SECONDARY_VIDEO = 1;
 
     private File primaryDir;
-
     private File secondaryDir;
-
     private JFrame mJFrame = new JFrame();
 
     /**
      * primary panel
      */
     private JLabel mPrimaryImage = new JLabel();
+    private BufferedImage mPrimaryBufferedImage;
     private JLabel mPrimaryFrameNumber = new JLabel();
 
     /**
      * secondary panel
      */
     private JLabel mSecondaryImage = new JLabel();
+    private BufferedImage mSecondaryBufferedImage;
     private JLabel mSecondaryFrameNumber = new JLabel();
 
     public static void main(String[] args) {
         new Producer();
-        log("Oki");
+        log("Oki-Producer");
     }
 
     private Producer() {
-        initUi();
+        initProducer();
     }
 
-    private void initUi() {
-        initJFrame();
+    private void initProducer() {
+        initFrame();
 
         JPanel actionPanel = initActionPanel();
         JPanel primaryPanel = initVideo(PRIMARY_VIDEO);
@@ -58,7 +58,7 @@ public class Producer {
         mJFrame.setVisible(true);
     }
 
-    private void initJFrame() {
+    private void initFrame() {
         mJFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         mJFrame.setTitle("Oki Player");
         mJFrame.setSize(734,408);
@@ -111,36 +111,59 @@ public class Producer {
     private void importPrimaryVideo() {
         primaryDir = selectFile(mJFrame);
         if (primaryDir != null) {
-            updateImage(PRIMARY_VIDEO, 1);
+//            updateImage(PRIMARY_VIDEO, 1);
+            updatePrimaryImage(1);
         }
     }
 
     private void importSecondaryVideo() {
         secondaryDir = selectFile(mJFrame);
         if (secondaryDir != null) {
-            updateImage(SECONDARY_VIDEO, 1);
+//            updateImage(SECONDARY_VIDEO, 1);
+            updateSecondaryImage(1);
         }
     }
 
-    private void updateImage(int type, int frameNum) {
-        File dir;
-        JLabel imageLabel;
-        JLabel frameNumText;
-        if (type == PRIMARY_VIDEO) {
-            dir = primaryDir;
-            imageLabel = mPrimaryImage;
-            frameNumText = mPrimaryFrameNumber;
-        } else {
-            dir = secondaryDir;
-            imageLabel = mSecondaryImage;
-            frameNumText = mSecondaryFrameNumber;
-        }
-        BufferedImage frame = loadFrame(dir, frameNum);
-        if (frame == null) {
+//    private void updateImage(int type, int frameNum) {
+//        JLabel imageLabel;
+//        JLabel frameNumText;
+//        if (type == PRIMARY_VIDEO) {
+//            imageLabel = mPrimaryImage;
+//            frameNumText = mPrimaryFrameNumber;
+//            mPrimaryBufferedImage = loadFrame(primaryDir, frameNum);
+//        } else {
+//            imageLabel = mSecondaryImage;
+//            frameNumText = mSecondaryFrameNumber;
+//            mSecondaryBufferedImage = loadFrame(secondaryDir, frameNum);
+//        }
+//        BufferedImage frame =
+//        if (frame == null) {
+//            log("Error: frame is null.");
+//        } else {
+//            imageLabel.setIcon(new ImageIcon(frame));
+//            frameNumText.setText("Current Frame " + frameNum);
+//        }
+//    }
+
+    private void updatePrimaryImage(int frameNum) {
+        BufferedImage bufferedImage = loadFrame(primaryDir, frameNum);
+        mPrimaryBufferedImage = bufferedImage;
+        if (bufferedImage == null) {
             log("Error: frame is null.");
         } else {
-            imageLabel.setIcon(new ImageIcon(frame));
-            frameNumText.setText("Current Frame " + frameNum);
+            mPrimaryImage.setIcon(new ImageIcon(bufferedImage));
+            mPrimaryFrameNumber.setText("Current Frame " + frameNum);
+        }
+    }
+
+    private void updateSecondaryImage(int frameNum) {
+        BufferedImage bufferedImage = loadFrame(secondaryDir, frameNum);
+        mSecondaryBufferedImage = bufferedImage;
+        if (bufferedImage == null) {
+            log("Error: frame is null.");
+        } else {
+            mSecondaryImage.setIcon(new ImageIcon(bufferedImage));
+            mSecondaryFrameNumber.setText("Current Frame " + frameNum);
         }
     }
 
@@ -194,7 +217,12 @@ public class Producer {
         jSlider.addChangeListener(e ->{
             JSlider source = (JSlider)e.getSource();
             if (!source.getValueIsAdjusting()) {
-                updateImage(type, source.getValue());
+                if (type == PRIMARY_VIDEO) {
+                    updatePrimaryImage(source.getValue());
+                } else {
+                    updateSecondaryImage(source.getValue());
+                }
+//                updateImage(type, source.getValue());
             }
         });
         jSlider.setMinorTickSpacing(1);
@@ -227,6 +255,8 @@ public class Producer {
             width = e.getX() - startX;
             height = e.getY() - startY;
             log("mouserReleased: width=" + width + " height=" + height);
+            updatePrimaryImage(e.getX(), e.getY(), false);
+            mPrimaryImage.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
             mPrimaryImage.removeMouseListener(this);
             mPrimaryImage.removeMouseMotionListener(mouseMotionListener);
         }
@@ -234,6 +264,7 @@ public class Producer {
         @Override
         public void mouseEntered(MouseEvent e) {
             log("mouseEntered");
+            mPrimaryImage.setCursor(new Cursor(CROSSHAIR_CURSOR));
         }
 
         @Override
@@ -245,18 +276,35 @@ public class Producer {
     private MouseMotionListener mouseMotionListener = new MouseMotionListener() {
         @Override
         public void mouseDragged(MouseEvent e) {
-            log("mouserDragged");
+//            log("mouserDragged");
+            int currentX = e.getX();
+            int currentY = e.getY();
+            updatePrimaryImage(currentX, currentY, true);
         }
 
         @Override
         public void mouseMoved(MouseEvent e) {
-            log("mouserMoved");
+//            log("mouserMoved");
         }
     };
 
     private void setupPrimaryImageToSelect() {
         mPrimaryImage.addMouseListener(mouseListener);
         mPrimaryImage.addMouseMotionListener(mouseMotionListener);
+    }
+
+    private void updatePrimaryImage(int currentX, int currentY, boolean temporal) {
+        BufferedImage image;
+        if (temporal) {
+            image = deepCopy(mPrimaryBufferedImage);
+        } else {
+            image = mPrimaryBufferedImage;
+        }
+        Graphics2D g2d = image.createGraphics();
+        g2d.setColor(Color.GREEN);
+        g2d.drawRect(startX, startY, currentX - startX, currentY - startY);
+        g2d.dispose();
+        mPrimaryImage.setIcon(new ImageIcon(image));
     }
 
 }

@@ -3,12 +3,13 @@ package com.player.ui;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
 class Utils {
-
     private final static int HEIGHT = 288;
     private final static int WIDTH = 352;
 
@@ -79,6 +80,13 @@ class Utils {
             return null;
         }
         return readImage(filePath);
+    }
+
+    static BufferedImage deepCopy(BufferedImage bi) {
+        ColorModel cm = bi.getColorModel();
+        boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
+        WritableRaster raster = bi.copyData(null);
+        return new BufferedImage(cm, raster, isAlphaPremultiplied, null);
     }
 
 }
