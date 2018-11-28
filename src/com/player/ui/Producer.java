@@ -4,7 +4,6 @@ import com.sun.istack.internal.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -12,8 +11,13 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 
 import static com.player.ui.Utils.*;
+import static java.awt.BorderLayout.PAGE_END;
+import static java.awt.BorderLayout.PAGE_START;
 
 public class Producer {
+
+    private static final int PRIMARY_VIDEO = 0;
+    private static final int SECONDARY_VIDEO = 1;
 
     @Nullable
     private File primaryDir;
@@ -23,32 +27,17 @@ public class Producer {
 
     private JFrame mJFrame = new JFrame();
 
-    private JLabel mLeftVideo = new JLabel();
-    private int primaryProgress = 0;
+    /**
+     * primary panel
+     */
+    private JLabel mPrimaryImage = new JLabel();
+    private JLabel mPrimaryFrameNumber = new JLabel();
 
-    private JLabel mRightVideo = new JLabel();
-    private int secondaryProgress = 0;
-
-    private final int mDelay = 33;
-
-    private ActionListener primaryUpdater = evt -> {
-        mLeftVideo.setIcon(new ImageIcon(loadFrame(primaryDir, primaryProgress)));
-        primaryProgress++;
-        if (primaryProgress > 9000) {
-            primaryProgress = 1;
-        }
-    };
-
-    private ActionListener secondaryUpdater = evt -> {
-        mRightVideo.setIcon(new ImageIcon(loadFrame(secondaryDir, secondaryProgress)));
-        secondaryProgress++;
-        if (secondaryProgress > 9000) {
-            secondaryProgress = 1;
-        }
-    };
-
-    private Timer primaryTimer = new Timer(mDelay, primaryUpdater);
-    private Timer secondaryTimer = new Timer(mDelay, secondaryUpdater);
+    /**
+     * secondary panel
+     */
+    private JLabel mSecondaryImage = new JLabel();
+    private JLabel mSecondaryFrameNumber = new JLabel();
 
     public static void main(String[] args) {
         new Producer();
@@ -63,18 +52,12 @@ public class Producer {
         initJFrame();
 
         JPanel actionPanel = initActionPanel();
-        JPanel leftVideo = initVideo(0);
-        JPanel rightVideo = initVideo(1);
+        JPanel primaryPanel = initVideo(PRIMARY_VIDEO);
+        JPanel secondaryPanel = initVideo(SECONDARY_VIDEO);
 
-//        JButton vegFruitBut = new JButton( "Fruit or Veg");
-//        vegFruitBut.addActionListener(event -> {
-//            actionPanel.setVisible(!actionPanel.isVisible());
-//            comboPanel.setVisible(!comboPanel.isVisible());
-//        });
-
-        mJFrame.add(actionPanel, BorderLayout.PAGE_START);
-        mJFrame.add(leftVideo, BorderLayout.LINE_START);
-        mJFrame.add(rightVideo, BorderLayout.LINE_END);
+        mJFrame.add(actionPanel, PAGE_START);
+        mJFrame.add(primaryPanel, BorderLayout.LINE_START);
+        mJFrame.add(secondaryPanel, BorderLayout.LINE_END);
         mJFrame.setVisible(true);
     }
 
@@ -92,11 +75,8 @@ public class Producer {
         panel.setLayout(layout);
 
         setupActionList(panel);
-
         setupLinkList(panel);
-
         setupButtons(panel);
-
         return panel;
     }
 
@@ -133,32 +113,37 @@ public class Producer {
 
     private void importPrimaryVideo() {
         primaryDir = selectFile(mJFrame);
-        primaryProgress = 1;
-        startPlay(0);
+        if (primaryDir != null) {
+            updateImage(PRIMARY_VIDEO, 1);
+        }
     }
 
     private void importSecondaryVideo() {
         secondaryDir = selectFile(mJFrame);
-        secondaryProgress = 1;
-        startPlay(1);
+        if (secondaryDir != null) {
+            updateImage(SECONDARY_VIDEO, 1);
+        }
     }
 
-    /**
-     *
-     * @param frameNumber from 1 - 9000
-     */
-    private BufferedImage loadFrame(File dir, int frameNumber) {
-        String fileName = dir.getName() + String.format("%04d", frameNumber) + ".rgb";
-        String filePath = dir.getAbsolutePath() + File.separator + fileName;
-        return readImage(filePath);
-    }
-
-    private void startPlay(int type) {
-        int delay = 33; //milliseconds
-        if (type == 0) {
-            primaryTimer.start();
-        } else if (type == 1) {
-            secondaryTimer.start();
+    private void updateImage(int type, int progress) {
+        File dir;
+        JLabel image;
+        JLabel frameNumber;
+        if (type == PRIMARY_VIDEO) {
+            dir = primaryDir;
+            image = mPrimaryImage;
+            frameNumber = mPrimaryFrameNumber;
+        } else {
+            dir = secondaryDir;
+            image = mSecondaryImage;
+            frameNumber = mSecondaryFrameNumber;
+        }
+        BufferedImage frame = loadFrame(dir, progress);
+        if (frame == null) {
+            log("Error: frame is null.");
+        } else {
+            image.setIcon(new ImageIcon(frame));
+            frameNumber.setText("Current Frame " + progress);
         }
     }
 
@@ -188,15 +173,35 @@ public class Producer {
 
     private JPanel initVideo(int type) {
         JPanel panel = new JPanel();
+        JSlider jSlider = setupSlider(type);
         panel.setSize(367, 308);
-
+        panel.setLayout(new BorderLayout());
         if (type == 0) {
-            panel.add(mLeftVideo);
+            panel.add(mPrimaryImage, PAGE_START);
+            panel.add(mPrimaryFrameNumber, PAGE_END);
+            panel.add(jSlider);
         } else if (type == 1) {
-            panel.add(mRightVideo);
+            panel.add(mSecondaryImage, PAGE_START);
+            panel.add(mSecondaryFrameNumber, PAGE_END);
+            panel.add(jSlider);
         }
 
         return panel;
+    }
+
+    private JSlider setupSlider(int type) {
+        JSlider jSlider = new JSlider(JSlider.HORIZONTAL, 1, 9000, 1);
+        jSlider.addChangeListener(e ->{
+            JSlider source = (JSlider)e.getSource();
+            if (!source.getValueIsAdjusting()) {
+                updateImage(type, source.getValue());
+            }
+        });
+        jSlider.setMinorTickSpacing(1);
+        jSlider.setMajorTickSpacing(100);
+        jSlider.setPaintTrack(true);
+        jSlider.setBorder(BorderFactory.createEmptyBorder(0,0,10,0));
+        return jSlider;
     }
 
 }

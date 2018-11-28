@@ -3,17 +3,17 @@ package com.player.ui;
 import com.sun.istack.internal.Nullable;
 
 import javax.swing.*;
-import javax.swing.border.Border;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 
-import static com.player.ui.Utils.log;
-import static com.player.ui.Utils.readImage;
-import static com.player.ui.Utils.selectFile;
+import static com.player.ui.Utils.*;
 import static java.awt.BorderLayout.*;
 
 public class Player implements ChangeListener {
@@ -75,9 +75,7 @@ public class Player implements ChangeListener {
         panel.setLayout(layout);
 
         setupActionList(panel);
-
         setupButtons(panel);
-
         return panel;
     }
 
@@ -121,25 +119,6 @@ public class Player implements ChangeListener {
 
     private void navigateTo(String folderPath, int frameNumber) {
 
-    }
-
-    /**
-     * @param frameNumber from 1 - 9000
-     * @return bufferedImage
-     */
-    private BufferedImage loadFrame(File dir, int frameNumber) {
-        if (dir == null) {
-            log("Error: dir is null");
-            return null;
-        }
-        String fileName = dir.getName() + String.format("%04d", frameNumber) + ".rgb";
-        String filePath = dir.getAbsolutePath() + File.separator + fileName;
-        File file = new File(filePath);
-        if (!file.exists()) {
-            log("Error: file: " + filePath + "is not exists.");
-            return null;
-        }
-        return readImage(filePath);
     }
 
     private void startPlay() {
@@ -190,9 +169,7 @@ public class Player implements ChangeListener {
 
     private JPanel initVideo() {
         JPanel panel = new JPanel();
-
         setupSlider();
-
         // 367, 308
         panel.setSize(367, 308);
         panel.setLayout(new BorderLayout());

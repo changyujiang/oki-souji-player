@@ -34,7 +34,7 @@ class Utils {
         System.out.println(message);
     }
 
-    static BufferedImage readImage(String fileName) {
+    private static BufferedImage readImage(String fileName) {
         BufferedImage image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
 
         try {
@@ -63,6 +63,25 @@ class Utils {
             e.printStackTrace();
         }
         return image;
+    }
+
+    /**
+     * @param frameNumber from 1 - 9000
+     * @return bufferedImage
+     */
+    static BufferedImage loadFrame(File dir, int frameNumber) {
+        if (dir == null) {
+            log("Error: dir is null");
+            return null;
+        }
+        String fileName = dir.getName() + String.format("%04d", frameNumber) + ".rgb";
+        String filePath = dir.getAbsolutePath() + File.separator + fileName;
+        File file = new File(filePath);
+        if (!file.exists()) {
+            log("Error: file: " + filePath + "is not exists.");
+            return null;
+        }
+        return readImage(filePath);
     }
 
 }
