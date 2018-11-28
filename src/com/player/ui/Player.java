@@ -1,7 +1,5 @@
 package com.player.ui;
 
-import com.sun.istack.internal.Nullable;
-
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -21,7 +19,6 @@ public class Player implements ChangeListener {
     private final int FPS = 30;
     private final int mDelay = 33;
 
-    @Nullable
     private File mCurrentDir;
 
     private JFrame mJFrame = new JFrame();

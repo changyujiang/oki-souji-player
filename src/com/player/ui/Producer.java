@@ -1,12 +1,11 @@
 package com.player.ui;
 
-import com.sun.istack.internal.Nullable;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 
@@ -19,10 +18,8 @@ public class Producer {
     private static final int PRIMARY_VIDEO = 0;
     private static final int SECONDARY_VIDEO = 1;
 
-    @Nullable
     private File primaryDir;
 
-    @Nullable
     private File secondaryDir;
 
     private JFrame mJFrame = new JFrame();
@@ -149,7 +146,7 @@ public class Producer {
 
     //TODO
     private void createNewLink() {
-
+        setupPrimaryImageToSelect();
     }
 
     //TODO
@@ -205,6 +202,61 @@ public class Producer {
         jSlider.setPaintTrack(true);
         jSlider.setBorder(BorderFactory.createEmptyBorder(0,0,10,0));
         return jSlider;
+    }
+
+    private int startX;
+    private int startY;
+    private int width;
+    private int height;
+
+    private MouseListener mouseListener = new MouseListener() {
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            log("mouseClicked");
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            startX = e.getX();
+            startY = e.getY();
+            log("mouserPressed: startX=" + startX + " startY=" + startY);
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+            width = e.getX() - startX;
+            height = e.getY() - startY;
+            log("mouserReleased: width=" + width + " height=" + height);
+            mPrimaryImage.removeMouseListener(this);
+            mPrimaryImage.removeMouseMotionListener(mouseMotionListener);
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            log("mouseEntered");
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            log("mouserExited");
+        }
+    };
+
+    private MouseMotionListener mouseMotionListener = new MouseMotionListener() {
+        @Override
+        public void mouseDragged(MouseEvent e) {
+            log("mouserDragged");
+        }
+
+        @Override
+        public void mouseMoved(MouseEvent e) {
+            log("mouserMoved");
+        }
+    };
+
+    private void setupPrimaryImageToSelect() {
+        mPrimaryImage.addMouseListener(mouseListener);
+        mPrimaryImage.addMouseMotionListener(mouseMotionListener);
     }
 
 }

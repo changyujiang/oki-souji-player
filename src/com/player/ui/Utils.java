@@ -1,7 +1,5 @@
 package com.player.ui;
 
-import com.sun.istack.internal.Nullable;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -14,7 +12,6 @@ class Utils {
     private final static int HEIGHT = 288;
     private final static int WIDTH = 352;
 
-    @Nullable
     static File selectFile(Component component) {
         final JFileChooser fc = new JFileChooser();
 
