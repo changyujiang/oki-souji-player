@@ -1,11 +1,15 @@
 package com.player.ui;
 
+import com.google.gson.Gson;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 
@@ -80,6 +84,24 @@ class Utils {
             return null;
         }
         return readImage(filePath);
+    }
+
+    static Links loadLinks(File dir){
+        Links links = null;
+        if (dir == null) {
+            log("Error: dir is null");
+            return null;
+        }
+        String fileName = dir.getName() + ".json";
+        String filePath = dir.getAbsolutePath() + File.separator + fileName;
+        try {
+            BufferedReader bufferedReader = new BufferedReader(new FileReader(filePath));
+            Gson gson = new Gson();
+            links = gson.fromJson(bufferedReader, Links.class);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return links;
     }
 
     static BufferedImage deepCopy(BufferedImage bi) {

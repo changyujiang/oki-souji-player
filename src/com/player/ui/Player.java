@@ -10,6 +10,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.ArrayList;
 
 import static com.player.ui.Utils.*;
 import static java.awt.BorderLayout.*;
@@ -27,6 +28,7 @@ public class Player implements ChangeListener {
     private JSlider mSlider = new JSlider(JSlider.HORIZONTAL,
             1, 9000, 1);
     private int mCurrentProgress = 0;
+    private Links mCurrentLinks = null;
 
     private Font font = new Font("Serif", Font.PLAIN, 15);
 
@@ -106,6 +108,7 @@ public class Player implements ChangeListener {
 
     private void importVideo() {
         mCurrentDir = selectFile(mJFrame);
+        mCurrentLinks = loadLinks(mCurrentDir);
         mCurrentProgress = 1;
         startPlay();
     }
@@ -115,7 +118,10 @@ public class Player implements ChangeListener {
     }
 
     private void navigateTo(String folderPath, int frameNumber) {
-
+        mCurrentDir = new File(folderPath);
+        mCurrentLinks = loadLinks(mCurrentDir);
+        mCurrentProgress = frameNumber;
+        startPlay();
     }
 
     private void startPlay() {
@@ -177,7 +183,29 @@ public class Player implements ChangeListener {
         mVideoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         mFrameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         mSlider.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        MouseListener mouseListener = new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                log("mouserClicked: x=" + e.getX() + " y=" + e.getY());
+                checkLink(e.getX(), e.getY());
+            }
+        };
+        mVideoLabel.addMouseListener(mouseListener);
+
         return panel;
+    }
+
+    private void checkLink(int x, int y){
+        ArrayList<LinkedObj> frameLinks = mCurrentLinks.getLinks().get(mCurrentProgress);
+        if (frameLinks != null){
+            for (LinkedObj obj : frameLinks){
+                if (x >= obj.getX() && x <= obj.getX() + obj.getWidth() &&
+                        y >= obj.getY() && y <= obj.getY() + obj.getHeight()){
+                    navigateTo(obj.getFilePath(), obj.getFrameIndex());
+                }
+            }
+        }
+
     }
 
     private void setupSlider() {
@@ -194,6 +222,7 @@ public class Player implements ChangeListener {
         JSlider source = (JSlider)e.getSource();
         if (!source.getValueIsAdjusting()) {
             mCurrentProgress = source.getValue();
+            updateFrame();
         }
     }
 
