@@ -1,6 +1,9 @@
 package com.player.ui;
 
+import com.player.entity.Frame;
+
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,7 +14,12 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
 
 class Utils {
     private final static int HEIGHT = 288;
@@ -102,6 +110,29 @@ class Utils {
             e.printStackTrace();
         }
         return links;
+    }
+
+    static Map<Integer, Frame> loadFrameMeta(File dir) {
+        Map<Integer, Frame> frameMap = new HashMap<>();
+
+        if (dir == null) {
+            log("Error: dir is null");
+            return frameMap;
+        }
+        String fileName = dir.getName() + ".json";
+        String filePath = dir.getAbsolutePath() + File.separator + fileName;
+        try {
+            BufferedReader bufferedReader = new BufferedReader(new FileReader(filePath));
+            Type listType = new TypeToken<ArrayList<Frame>>(){}.getType();
+            List<Frame> frames = new Gson().fromJson(bufferedReader, listType);
+            for (Frame frame: frames) {
+                frameMap.put(frame.getFrameNum(), frame);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return frameMap;
     }
 
     static BufferedImage deepCopy(BufferedImage bi) {
