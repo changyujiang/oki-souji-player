@@ -3,3 +3,7 @@
 generated/
 
 gson-2\.8\.5\.jar
+
+libopencv_java343\.dylib
+
+opencv-343\.jar

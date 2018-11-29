@@ -1,5 +1,8 @@
 package com.player.entity;
 
+import com.google.gson.annotations.SerializedName;
+import org.opencv.core.Rect2d;
+
 import java.util.List;
 
 public class Frame {
@@ -24,19 +27,39 @@ public class Frame {
         this.links = links;
     }
 
-    class Link {
+    public static class Link {
 
+        public Link() {
+
+        }
+
+        public Link(int curFrameNum, Rect2d rect2d) {
+            this.curFrameNum = curFrameNum;
+            this.x = (int) rect2d.x;
+            this.y = (int) rect2d.y;
+            this.width = (int) rect2d.width;
+            this.height = (int) rect2d.height;
+        }
+
+        @SerializedName("x")
         private int x;
 
+        @SerializedName("y")
         private int y;
 
+        @SerializedName("w")
         private int width;
 
+        @SerializedName("h")
         private int height;
 
+        @SerializedName("frame")
+        private int frameNum;
+
+        @SerializedName("path")
         private String path;
 
-        private int frameNum;
+        private int curFrameNum;
 
         public int getX() {
             return x;
@@ -70,6 +93,14 @@ public class Frame {
             this.height = height;
         }
 
+        public int getFrameNum() {
+            return frameNum;
+        }
+
+        public void setFrameNum(int frameNum) {
+            this.frameNum = frameNum;
+        }
+
         public String getPath() {
             return path;
         }
@@ -78,12 +109,12 @@ public class Frame {
             this.path = path;
         }
 
-        public int getFrameNum() {
-            return frameNum;
+        public int getCurFrameNum() {
+            return curFrameNum;
         }
 
-        public void setFrameNum(int frameNum) {
-            this.frameNum = frameNum;
+        public void setCurFrameNum(int curFrameNum) {
+            this.curFrameNum = curFrameNum;
         }
     }
 

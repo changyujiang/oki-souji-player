@@ -1,16 +1,12 @@
+package com.player.algo;
+
 import javafx.util.Pair;
-import org.opencv.core.Core;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Rect2d;
-import org.opencv.videoio.VideoCapture;
-import org.opencv.videoio.Videoio;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.List;
 
@@ -53,11 +49,11 @@ public class TrackerTest {
         CVObjTracker ot = new CVObjTracker();
         Rect2d bbox = new Rect2d(220, 60, 60, 135);
         int trackDis = 150;
-        List<Pair<Integer, Rect2d>> bboxs = ot.trackObj("data/AIFilmOne", 130, bbox, trackDis);
-        for (Pair<Integer, Rect2d>pair : bboxs){
-            System.out.println(pair);
-        }
-        System.out.println(bboxs.size());
+//        List<Pair<Integer, Rect2d>> bboxs = ot.trackObj("data/AIFilmOne", 130, bbox, trackDis);
+//        for (Pair<Integer, Rect2d>pair : bboxs){
+//            System.out.println(pair);
+//        }
+//        System.out.println(bboxs.size());
 
 //        VideoCapture vc = new VideoCapture();
 //        vc.open("data/AIFilmOne.avi");

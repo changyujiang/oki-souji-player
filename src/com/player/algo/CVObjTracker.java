@@ -1,24 +1,33 @@
-import javafx.util.Pair;
+package com.player.algo;
+
+import com.player.entity.Frame;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Rect2d;
 import org.opencv.tracking.TrackerKCF;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 public class CVObjTracker {
-    static{ System.loadLibrary(Core.NATIVE_LIBRARY_NAME); }
 
-    public List<Pair<Integer, Rect2d>> trackObj(String filePath, int frameIndex, Rect2d trackingObj, int trackDis)throws IOException {
+    static {
+        System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+    }
+
+    public static List<Frame.Link> trackObj(String filePath, int frameIndex, Rect2d area, int distance)
+            throws IOException {
         //add initial frame and bounding box
-        List<Pair<Integer, Rect2d>> ret = new ArrayList<>();
-        ret.add(new Pair<>(frameIndex, trackingObj.clone()));
+        List<Frame.Link> ret = new ArrayList<>();
+        ret.add(new Frame.Link(frameIndex, area.clone()));
 
-        //initialize first matrix from fisrt frame
-        String imgPath = filePath + String.format("%04d", frameIndex) + ".rgb";
+        //initialize first matrix from first frame
+        String imgPath = filePath + File.separator + String.format("%04d", frameIndex) + ".rgb";
         File imgFile = new File(imgPath);
         InputStream in = new FileInputStream(imgFile);
         byte[] imgBytes = new byte[in.available()];
@@ -38,14 +47,14 @@ public class CVObjTracker {
         //initialize KCF tracker
         boolean ok;
         TrackerKCF tracker = TrackerKCF.create();
-        ok = tracker.init(imgMat, trackingObj);
+        ok = tracker.init(imgMat, area);
         if (!ok){
             System.out.println("Tracker Initialization Failed");
             return ret;
         }
 
         //track until the limit or the end
-        final int maxTrackIndex = trackDis > 0 ? frameIndex + trackDis : 9000;
+        final int maxTrackIndex = distance > 0 ? frameIndex + distance : 9000;
         frameIndex++;
         for (; frameIndex <= maxTrackIndex && frameIndex <= 9000; frameIndex++){
             imgPath = filePath + String.format("%04d", frameIndex) + ".rgb";
@@ -61,12 +70,11 @@ public class CVObjTracker {
                 }
             }
 
-            ok = tracker.update(imgMat, trackingObj);
+            ok = tracker.update(imgMat, area);
             //if object's bounding box found, add pair; skip otherwise
             if (ok){
-                ret.add(new Pair<>(frameIndex, trackingObj.clone()));
+                ret.add(new Frame.Link(frameIndex, area.clone()));
             }
-
         }
 //        TrackerTest.showImg(TrackerTest.getImg(imgMat, trackingObj));
         return ret;

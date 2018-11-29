@@ -94,24 +94,6 @@ class Utils {
         return readImage(filePath);
     }
 
-    static Links loadLinks(File dir){
-        Links links = null;
-        if (dir == null) {
-            log("Error: dir is null");
-            return null;
-        }
-        String fileName = dir.getName() + ".json";
-        String filePath = dir.getAbsolutePath() + File.separator + fileName;
-        try {
-            BufferedReader bufferedReader = new BufferedReader(new FileReader(filePath));
-            Gson gson = new Gson();
-            links = gson.fromJson(bufferedReader, Links.class);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return links;
-    }
-
     static Map<Integer, Frame> loadFrameMeta(File dir) {
         Map<Integer, Frame> frameMap = new HashMap<>();
 
@@ -131,7 +113,6 @@ class Utils {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
         return frameMap;
     }
 
