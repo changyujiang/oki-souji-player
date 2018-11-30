@@ -1,5 +1,9 @@
 package com.player.ui;
 
+import com.player.algo.CVObjTracker;
+import com.player.entity.Frame;
+import org.opencv.core.Rect2d;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -8,6 +12,8 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
+import java.util.List;
 
 import static com.player.ui.Utils.*;
 import static java.awt.BorderLayout.PAGE_END;
@@ -145,6 +151,9 @@ public class Producer {
 //        }
 //    }
 
+    private int mPrimaryProgress = 0;
+    private int mSecondaryProgress = 0;
+
     private void updatePrimaryImage(int frameNum) {
         BufferedImage bufferedImage = loadFrame(primaryDir, frameNum);
         mPrimaryBufferedImage = bufferedImage;
@@ -153,6 +162,7 @@ public class Producer {
         } else {
             mPrimaryImage.setIcon(new ImageIcon(bufferedImage));
             mPrimaryFrameNumber.setText("Current Frame " + frameNum);
+            mPrimaryProgress = frameNum;
         }
     }
 
@@ -164,6 +174,7 @@ public class Producer {
         } else {
             mSecondaryImage.setIcon(new ImageIcon(bufferedImage));
             mSecondaryFrameNumber.setText("Current Frame " + frameNum);
+            mSecondaryProgress = frameNum;
         }
     }
 
@@ -259,6 +270,14 @@ public class Producer {
             mPrimaryImage.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
             mPrimaryImage.removeMouseListener(this);
             mPrimaryImage.removeMouseMotionListener(mouseMotionListener);
+
+            try {
+                List<Frame.Link> links = CVObjTracker.trackObj(primaryDir.getAbsolutePath(),
+                        mPrimaryProgress, new Rect2d(startX, startY, width, height), 50);
+
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
         }
 
         @Override

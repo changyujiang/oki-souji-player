@@ -34,7 +34,7 @@ public class Player implements ChangeListener {
             1, 9000, 1);
     private int mCurrentProgress = 0;
     private Stack<Integer> mPrevProgresses = new Stack<Integer>();
-    private Map<Integer, com.player.entity.Frame> mCurrentLinks = null;
+    private Map<Integer, Frame> mFrameMap = null;
 
     private Font font = new Font("Serif", Font.PLAIN, 15);
 
@@ -114,7 +114,7 @@ public class Player implements ChangeListener {
 
     private void importVideo() {
         mCurrentDir = selectFile(mJFrame);
-        mCurrentLinks = loadFrameMeta(mCurrentDir);
+        mFrameMap = loadFrameMeta(mCurrentDir);
         mCurrentProgress = 1;
         startPlay();
     }
@@ -122,7 +122,7 @@ public class Player implements ChangeListener {
     private void goBack() {
         if (!mPrevDirs.empty() && !mPrevProgresses.empty()){
             mCurrentDir = mPrevDirs.pop();
-            mCurrentLinks = loadFrameMeta(mCurrentDir);
+            mFrameMap = loadFrameMeta(mCurrentDir);
             mCurrentProgress = mPrevProgresses.pop();
             startPlay();
         }
@@ -132,7 +132,7 @@ public class Player implements ChangeListener {
         mPrevDirs.push(mCurrentDir);
         mPrevProgresses.push(mCurrentProgress);
         mCurrentDir = new File(folderPath);
-        mCurrentLinks = loadFrameMeta(mCurrentDir);
+        mFrameMap = loadFrameMeta(mCurrentDir);
         mCurrentProgress = frameNumber >= 1 && frameNumber <= 9000 ? frameNumber : 1;
         startPlay();
     }
@@ -211,7 +211,7 @@ public class Player implements ChangeListener {
     }
 
     private void checkLink(int x, int y){
-        Frame frame = mCurrentLinks.get(mCurrentProgress);
+        Frame frame = mFrameMap.get(mCurrentProgress);
         List<Frame.Link> links = frame.getLinks();
         for (Frame.Link link : links){
             if (x >= link.getX() && x <= link.getX() + link.getWidth() &&
