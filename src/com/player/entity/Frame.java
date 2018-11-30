@@ -24,7 +24,7 @@ public class Frame {
         this.links = links;
     }
 
-    class Link {
+    public class Link {
 
         private int x;
 

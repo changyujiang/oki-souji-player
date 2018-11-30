@@ -1,5 +1,7 @@
 package com.player.ui;
 
+import com.player.entity.Frame;
+
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -10,7 +12,9 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Stack;
 
 import static com.player.ui.Utils.*;
 import static java.awt.BorderLayout.*;
@@ -20,7 +24,8 @@ public class Player implements ChangeListener {
     private final int FPS = 30;
     private final int mDelay = 33;
 
-    private File mCurrentDir;
+    private File mCurrentDir = null;
+    private Stack<File> mPrevDirs = new Stack<File>();
 
     private JFrame mJFrame = new JFrame();
     private JLabel mVideoLabel = new JLabel();
@@ -28,7 +33,8 @@ public class Player implements ChangeListener {
     private JSlider mSlider = new JSlider(JSlider.HORIZONTAL,
             1, 9000, 1);
     private int mCurrentProgress = 0;
-    private Links mCurrentLinks = null;
+    private Stack<Integer> mPrevProgresses = new Stack<Integer>();
+    private Map<Integer, com.player.entity.Frame> mCurrentLinks = null;
 
     private Font font = new Font("Serif", Font.PLAIN, 15);
 
@@ -108,19 +114,26 @@ public class Player implements ChangeListener {
 
     private void importVideo() {
         mCurrentDir = selectFile(mJFrame);
-        mCurrentLinks = loadLinks(mCurrentDir);
+        mCurrentLinks = loadFrameMeta(mCurrentDir);
         mCurrentProgress = 1;
         startPlay();
     }
 
     private void goBack() {
-
+        if (!mPrevDirs.empty() && !mPrevProgresses.empty()){
+            mCurrentDir = mPrevDirs.pop();
+            mCurrentLinks = loadFrameMeta(mCurrentDir);
+            mCurrentProgress = mPrevProgresses.pop();
+            startPlay();
+        }
     }
 
     private void navigateTo(String folderPath, int frameNumber) {
+        mPrevDirs.push(mCurrentDir);
+        mPrevProgresses.push(mCurrentProgress);
         mCurrentDir = new File(folderPath);
-        mCurrentLinks = loadLinks(mCurrentDir);
-        mCurrentProgress = frameNumber;
+        mCurrentLinks = loadFrameMeta(mCurrentDir);
+        mCurrentProgress = frameNumber >= 1 && frameNumber <= 9000 ? frameNumber : 1;
         startPlay();
     }
 
@@ -132,13 +145,16 @@ public class Player implements ChangeListener {
         BufferedImage frame = loadFrame(mCurrentDir, mCurrentProgress);
         if (frame == null) {
             log("Error: frame is null.");
+            primaryTimer.stop();
         } else {
             mVideoLabel.setIcon(new ImageIcon(frame));
             mFrameLabel.setText("Playing Frame " + mCurrentProgress);
             if (mCurrentProgress % 100 - 1 == 0) {
                 mSlider.setValue(mCurrentProgress);
             }
-            mCurrentProgress++;
+            if (primaryTimer.isRunning()){
+                mCurrentProgress++;
+            }
         }
     }
 
@@ -186,7 +202,6 @@ public class Player implements ChangeListener {
 
         MouseListener mouseListener = new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
-                log("mouserClicked: x=" + e.getX() + " y=" + e.getY());
                 checkLink(e.getX(), e.getY());
             }
         };
@@ -196,16 +211,14 @@ public class Player implements ChangeListener {
     }
 
     private void checkLink(int x, int y){
-        ArrayList<LinkedObj> frameLinks = mCurrentLinks.getLinks().get(mCurrentProgress);
-        if (frameLinks != null){
-            for (LinkedObj obj : frameLinks){
-                if (x >= obj.getX() && x <= obj.getX() + obj.getWidth() &&
-                        y >= obj.getY() && y <= obj.getY() + obj.getHeight()){
-                    navigateTo(obj.getFilePath(), obj.getFrameIndex());
-                }
+        Frame frame = mCurrentLinks.get(mCurrentProgress);
+        List<Frame.Link> links = frame.getLinks();
+        for (Frame.Link link : links){
+            if (x >= link.getX() && x <= link.getX() + link.getWidth() &&
+                    y >= link.getY() && y <= link.getY() + link.getHeight()){
+                navigateTo(link.getPath(), link.getFrameNum());
             }
         }
-
     }
 
     private void setupSlider() {
