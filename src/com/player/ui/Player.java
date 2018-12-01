@@ -2,6 +2,7 @@ package com.player.ui;
 
 import com.player.entity.Frame;
 
+import javax.sound.sampled.*;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -22,7 +23,9 @@ import static java.awt.BorderLayout.*;
 public class Player implements ChangeListener {
 
     private final int FPS = 30;
-    private final int mDelay = 33;
+    private final int mDelay = 30;
+    private final int audioFrameLength = 13232128;
+    private final double audioFramesPerVideoFrame = (double)audioFrameLength / (double)9000;
 
     private File mCurrentDir = null;
     private Stack<File> mPrevDirs = new Stack<File>();
@@ -35,6 +38,7 @@ public class Player implements ChangeListener {
     private int mCurrentProgress = 0;
     private Stack<Integer> mPrevProgresses = new Stack<Integer>();
     private Map<Integer, Frame> mFrameMap = null;
+    private Clip mClip;
 
     private Font font = new Font("Serif", Font.PLAIN, 15);
 
@@ -115,6 +119,7 @@ public class Player implements ChangeListener {
     private void importVideo() {
         mCurrentDir = selectFile(mJFrame);
         mFrameMap = loadFrameMeta(mCurrentDir);
+        mClip = loadAudio(mCurrentDir);
         mCurrentProgress = 1;
         startPlay();
     }
@@ -123,6 +128,7 @@ public class Player implements ChangeListener {
         if (!mPrevDirs.empty() && !mPrevProgresses.empty()){
             mCurrentDir = mPrevDirs.pop();
             mFrameMap = loadFrameMeta(mCurrentDir);
+            mClip = loadAudio(mCurrentDir);
             mCurrentProgress = mPrevProgresses.pop();
             startPlay();
         }
@@ -133,12 +139,16 @@ public class Player implements ChangeListener {
         mPrevProgresses.push(mCurrentProgress);
         mCurrentDir = new File(folderPath);
         mFrameMap = loadFrameMeta(mCurrentDir);
+        mClip = loadAudio(mCurrentDir);
         mCurrentProgress = frameNumber >= 1 && frameNumber <= 9000 ? frameNumber : 1;
         startPlay();
     }
 
     private void startPlay() {
-        primaryTimer.start();
+        if (mCurrentDir != null){
+            primaryTimer.start();
+            mClip.start();
+        }
     }
 
     private void updateFrame() {
@@ -152,6 +162,9 @@ public class Player implements ChangeListener {
             if (mCurrentProgress % 100 - 1 == 0) {
                 mSlider.setValue(mCurrentProgress);
             }
+            if (mCurrentProgress % 200 - 1 == 0) {
+                mClip.setFramePosition((int)(mCurrentProgress * audioFramesPerVideoFrame));
+            }
             if (primaryTimer.isRunning()){
                 mCurrentProgress++;
             }
@@ -162,7 +175,7 @@ public class Player implements ChangeListener {
         JButton resume = new JButton("Play/Resume");
         resume.addActionListener(e -> {
             if (!primaryTimer.isRunning()) {
-                primaryTimer.start();
+                startPlay();
             }
         });
         panel.add(resume);
@@ -171,6 +184,7 @@ public class Player implements ChangeListener {
         pause.addActionListener(e -> {
             if (primaryTimer.isRunning()) {
                 primaryTimer.stop();
+                mClip.stop();
             }
         });
         panel.add(pause);
@@ -179,6 +193,7 @@ public class Player implements ChangeListener {
         stop.addActionListener(e -> {
             if (primaryTimer.isRunning()) {
                 primaryTimer.stop();
+                mClip.stop();
             }
             mCurrentProgress = 1;
             updateFrame();

@@ -5,6 +5,7 @@ import com.player.entity.Frame;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import javax.sound.sampled.*;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -92,6 +93,28 @@ class Utils {
             return null;
         }
         return readImage(filePath);
+    }
+
+    static Clip loadAudio(File dir){
+        Clip clip = null;
+        if (dir == null) {
+            log("Error: dir is null");
+            return clip;
+        }
+        String fileName = dir.getName() + ".wav";
+        String filePath = dir.getAbsolutePath() + File.separator + fileName;
+        try {
+            AudioInputStream stream = AudioSystem.getAudioInputStream(new File(filePath));
+            clip = AudioSystem.getClip();
+            clip.open(stream);
+        } catch (UnsupportedAudioFileException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (LineUnavailableException e) {
+            e.printStackTrace();
+        }
+        return clip;
     }
 
     static Map<Integer, Frame> loadFrameMeta(File dir) {

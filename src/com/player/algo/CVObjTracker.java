@@ -43,7 +43,7 @@ public class CVObjTracker {
                 imgMat.put(y, x, bgr);
             }
         }
-//        TrackerTest.showImg(TrackerTest.getImg(imgMat, trackingObj));
+
         //initialize KCF tracker
         boolean ok;
         TrackerKCF tracker = TrackerKCF.create();
@@ -76,7 +76,7 @@ public class CVObjTracker {
                 ret.add(new Frame.Link(frameIndex, area.clone()));
             }
         }
-//        TrackerTest.showImg(TrackerTest.getImg(imgMat, trackingObj));
+
         return ret;
     }
 }
