@@ -23,7 +23,7 @@ import static java.awt.BorderLayout.*;
 public class Player implements ChangeListener {
 
     private final int FPS = 30;
-    private final int mDelay = 30;
+    private final int mDelay = 31;
     private final int audioFrameLength = 13232128;
     private final double audioFramesPerVideoFrame = (double)audioFrameLength / (double)9000;
 
@@ -43,9 +43,6 @@ public class Player implements ChangeListener {
     private Font font = new Font("Serif", Font.PLAIN, 15);
 
     private ActionListener updater = evt -> {
-        if (mCurrentProgress > 9000) {
-            mCurrentProgress = 1;
-        }
         updateFrame();
     };
 
@@ -161,12 +158,13 @@ public class Player implements ChangeListener {
             mFrameLabel.setText("Playing Frame " + mCurrentProgress);
             if (mCurrentProgress % 100 - 1 == 0) {
                 mSlider.setValue(mCurrentProgress);
-            }
-            if (mCurrentProgress % 200 - 1 == 0) {
                 mClip.setFramePosition((int)(mCurrentProgress * audioFramesPerVideoFrame));
             }
             if (primaryTimer.isRunning()){
                 mCurrentProgress++;
+            }
+            if (mCurrentProgress == 9000){
+                primaryTimer.stop();
             }
         }
     }
