@@ -1,8 +1,9 @@
 package com.player.entity;
 
 import com.google.gson.annotations.SerializedName;
-import org.opencv.core.Rect2d;
+import com.player.ui.Producer;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Frame {
@@ -10,6 +11,22 @@ public class Frame {
     private int frameNum;
 
     private List<Link> links;
+
+    public Frame() {
+
+    }
+
+    public Frame(int frameNum, ProducerLink.BBox bBox) {
+        this.frameNum = frameNum;
+        links = new ArrayList<>();
+        links.add(new Link(bBox));
+    }
+
+    public Frame(int frameNum, ProducerLink.BBox bBox, int destFrameNum, String path) {
+        this.frameNum = frameNum;
+        links = new ArrayList<>();
+        links.add(new Link(bBox, destFrameNum, path));
+    }
 
     public int getFrameNum() {
         return frameNum;
@@ -27,18 +44,40 @@ public class Frame {
         this.links = links;
     }
 
+    public void addBbox(ProducerLink.BBox bBox) {
+        if (links == null) {
+            links = new ArrayList<>();
+        }
+        links.add(new Link(bBox));
+    }
+
+    public void addLink(ProducerLink.BBox bBox, int frameNum, String path) {
+        if (links == null) {
+            links = new ArrayList<>();
+        }
+        links.add(new Link(bBox, frameNum, path));
+    }
+
     public static class Link {
 
         public Link() {
 
         }
 
-        public Link(int curFrameNum, Rect2d rect2d) {
-            this.curFrameNum = curFrameNum;
-            this.x = (int) rect2d.x;
-            this.y = (int) rect2d.y;
-            this.width = (int) rect2d.width;
-            this.height = (int) rect2d.height;
+        public Link(ProducerLink.BBox bBox) {
+            this.x = bBox.x;
+            this.y = bBox.y;
+            this.width = bBox.width;
+            this.height = bBox.height;
+        }
+
+        public Link(ProducerLink.BBox bBox, int frameNum, String path) {
+            this.x = bBox.x;
+            this.y = bBox.y;
+            this.width = bBox.width;
+            this.height = bBox.height;
+            this.frameNum = frameNum;
+            this.path = path;
         }
 
         @SerializedName("x")
@@ -58,8 +97,6 @@ public class Frame {
 
         @SerializedName("path")
         private String path;
-
-        private int curFrameNum;
 
         public int getX() {
             return x;
@@ -109,13 +146,6 @@ public class Frame {
             this.path = path;
         }
 
-        public int getCurFrameNum() {
-            return curFrameNum;
-        }
-
-        public void setCurFrameNum(int curFrameNum) {
-            this.curFrameNum = curFrameNum;
-        }
     }
 
 }

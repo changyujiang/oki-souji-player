@@ -1,19 +1,21 @@
 package com.player.ui;
 
+import com.google.gson.Gson;
 import com.player.algo.CVObjTracker;
 import com.player.entity.Frame;
+import com.player.entity.ProducerLink;
 import org.opencv.core.Rect2d;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.player.ui.Utils.*;
 import static java.awt.BorderLayout.PAGE_END;
@@ -26,7 +28,14 @@ public class Producer {
 
     private File primaryDir;
     private File secondaryDir;
+
+    private Map<Integer, Frame> mFrameMap = new HashMap<>();
+    private List<ProducerLink> mProducerLinks = new ArrayList<>();
+
     private JFrame mJFrame = new JFrame();
+
+    private DefaultListModel<ProducerLink> mListModel = new DefaultListModel<>();
+    private JList<ProducerLink> mLinkList = new JList<>(mListModel);
 
     /**
      * primary panel
@@ -34,6 +43,7 @@ public class Producer {
     private JLabel mPrimaryImage = new JLabel();
     private BufferedImage mPrimaryBufferedImage;
     private JLabel mPrimaryFrameNumber = new JLabel();
+    private int mPrimaryProgress = 0;
 
     /**
      * secondary panel
@@ -41,6 +51,7 @@ public class Producer {
     private JLabel mSecondaryImage = new JLabel();
     private BufferedImage mSecondaryBufferedImage;
     private JLabel mSecondaryFrameNumber = new JLabel();
+    private int mSecondaryProgress = 0;
 
     public static void main(String[] args) {
         new Producer();
@@ -117,42 +128,17 @@ public class Producer {
     private void importPrimaryVideo() {
         primaryDir = selectFile(mJFrame);
         if (primaryDir != null) {
-//            updateImage(PRIMARY_VIDEO, 1);
             updatePrimaryImage(1);
+            mFrameMap = new HashMap<>();
         }
     }
 
     private void importSecondaryVideo() {
         secondaryDir = selectFile(mJFrame);
         if (secondaryDir != null) {
-//            updateImage(SECONDARY_VIDEO, 1);
             updateSecondaryImage(1);
         }
     }
-
-//    private void updateImage(int type, int frameNum) {
-//        JLabel imageLabel;
-//        JLabel frameNumText;
-//        if (type == PRIMARY_VIDEO) {
-//            imageLabel = mPrimaryImage;
-//            frameNumText = mPrimaryFrameNumber;
-//            mPrimaryBufferedImage = loadFrame(primaryDir, frameNum);
-//        } else {
-//            imageLabel = mSecondaryImage;
-//            frameNumText = mSecondaryFrameNumber;
-//            mSecondaryBufferedImage = loadFrame(secondaryDir, frameNum);
-//        }
-//        BufferedImage frame =
-//        if (frame == null) {
-//            log("Error: frame is null.");
-//        } else {
-//            imageLabel.setIcon(new ImageIcon(frame));
-//            frameNumText.setText("Current Frame " + frameNum);
-//        }
-//    }
-
-    private int mPrimaryProgress = 0;
-    private int mSecondaryProgress = 0;
 
     private void updatePrimaryImage(int frameNum) {
         BufferedImage bufferedImage = loadFrame(primaryDir, frameNum);
@@ -160,9 +146,22 @@ public class Producer {
         if (bufferedImage == null) {
             log("Error: frame is null.");
         } else {
+            drawBox(frameNum, bufferedImage);
             mPrimaryImage.setIcon(new ImageIcon(bufferedImage));
             mPrimaryFrameNumber.setText("Current Frame " + frameNum);
             mPrimaryProgress = frameNum;
+        }
+    }
+
+    private void drawBox(int frameNum, BufferedImage image) {
+        Frame frame = mFrameMap.get(frameNum);
+        if (frame != null && !frame.getLinks().isEmpty()) {
+            Graphics2D g2d = image.createGraphics();
+            for (Frame.Link link: frame.getLinks()) {
+                g2d.setColor(Color.GREEN);
+                g2d.drawRect(link.getX(), link.getY(), link.getWidth(), link.getHeight());
+            }
+            g2d.dispose();
         }
     }
 
@@ -178,30 +177,71 @@ public class Producer {
         }
     }
 
-    //TODO
     private void createNewLink() {
-        setupPrimaryImageToSelect();
+        addMouseListener();
     }
 
-    //TODO
     private void setupLinkList(JPanel panel) {
         JLabel linkLabel = new JLabel("Select Link:");
-        String[] links = {
-                "PlaceHolder1",
-                "PlaceHolder2"
+        mLinkList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        mLinkList.setLayoutOrientation(JList.VERTICAL);
+
+        MouseListener mouseListener = new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                ProducerLink producerLink = mListModel.get(mLinkList.getSelectedIndex());
+                updatePrimaryImage(producerLink.getStartFrame());
+            }
         };
-        JList<String> linkList = new JList<>(links);
-        linkList.setLayoutOrientation(JList.VERTICAL);
+        mLinkList.addMouseListener(mouseListener);
+
         panel.add(linkLabel);
-        panel.add(linkList);
+        panel.add(mLinkList);
     }
 
     private void setupButtons(JPanel panel) {
-        JButton connect_video = new JButton("Connect Video");
-        panel.add(connect_video);
+        JButton btnConnectVideo = new JButton("Connect Video");
+        btnConnectVideo.addActionListener(e -> connectVideo());
+        panel.add(btnConnectVideo);
 
-        JButton save_file = new JButton("Save File");
-        panel.add(save_file);
+        JButton btnSaveFile = new JButton("Save File");
+        btnSaveFile.addActionListener(e -> saveFile());
+        panel.add(btnSaveFile);
+    }
+
+    private void connectVideo() {
+        int selectedIndex = mLinkList.getSelectedIndex();
+        if (selectedIndex == -1) {
+            return;
+        }
+        ProducerLink producerLink = mListModel.get(selectedIndex);
+
+        if (secondaryDir == null) {
+            // TODO popup error dialog
+            return;
+        }
+
+        producerLink.setDestFrame(mSecondaryProgress);
+        producerLink.setDestPath(secondaryDir.getAbsolutePath());
+    }
+
+    private void saveFile() {
+        Map<Integer, Frame> frameMap = new HashMap<>();
+        if (mListModel.size() > 0) {
+            for (int i = 0; i < mListModel.size(); i++) {
+                ProducerLink producerLink = mListModel.get(i);
+                for (ProducerLink.BBox bbox: producerLink.getbBoxes()) {
+                    int frameNum = bbox.getFrame();
+                    Frame frame = frameMap.get(frameNum);
+                    if (frame == null) {
+                        frameMap.put(frameNum, new Frame(frameNum, bbox, producerLink.getDestFrame(), producerLink.getDestPath()));
+                    } else {
+                        frame.addLink(bbox, producerLink.getDestFrame(), producerLink.getDestPath());
+                    }
+                }
+            }
+        }
+        String json = new Gson().toJson(frameMap.values());
+        log(json);
     }
 
     // TODO improve layout setting
@@ -219,7 +259,6 @@ public class Producer {
             panel.add(mSecondaryFrameNumber, PAGE_END);
             panel.add(jSlider);
         }
-
         return panel;
     }
 
@@ -233,7 +272,6 @@ public class Producer {
                 } else {
                     updateSecondaryImage(source.getValue());
                 }
-//                updateImage(type, source.getValue());
             }
         });
         jSlider.setMinorTickSpacing(1);
@@ -243,59 +281,48 @@ public class Producer {
         return jSlider;
     }
 
-    private int startX;
-    private int startY;
+    private int x;
+    private int y;
     private int width;
     private int height;
+    private int linkId = 0;
 
     private MouseListener mouseListener = new MouseListener() {
         @Override
         public void mouseClicked(MouseEvent e) {
-            log("mouseClicked");
         }
 
         @Override
         public void mousePressed(MouseEvent e) {
-            startX = e.getX();
-            startY = e.getY();
-            log("mouserPressed: startX=" + startX + " startY=" + startY);
+            x = e.getX();
+            y = e.getY();
         }
 
         @Override
         public void mouseReleased(MouseEvent e) {
-            width = e.getX() - startX;
-            height = e.getY() - startY;
+            width = e.getX() - x;
+            height = e.getY() - y;
             log("mouserReleased: width=" + width + " height=" + height);
             updatePrimaryImage(e.getX(), e.getY(), false);
             mPrimaryImage.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
             mPrimaryImage.removeMouseListener(this);
             mPrimaryImage.removeMouseMotionListener(mouseMotionListener);
-
-            try {
-                List<Frame.Link> links = CVObjTracker.trackObj(primaryDir.getAbsolutePath(),
-                        mPrimaryProgress, new Rect2d(startX, startY, width, height), 50);
-
-            } catch (IOException e1) {
-                e1.printStackTrace();
-            }
+            createLink();
         }
 
         @Override
         public void mouseEntered(MouseEvent e) {
-            log("mouseEntered");
             mPrimaryImage.setCursor(new Cursor(CROSSHAIR_CURSOR));
         }
 
         @Override
         public void mouseExited(MouseEvent e) {
-            log("mouserExited");
         }
     };
 
     private MouseMotionListener mouseMotionListener = new MouseMotionListener() {
         @Override
         public void mouseDragged(MouseEvent e) {
-//            log("mouserDragged");
             int currentX = e.getX();
             int currentY = e.getY();
             updatePrimaryImage(currentX, currentY, true);
@@ -303,13 +330,40 @@ public class Producer {
 
         @Override
         public void mouseMoved(MouseEvent e) {
-//            log("mouserMoved");
+
         }
     };
 
-    private void setupPrimaryImageToSelect() {
+    private void addMouseListener() {
         mPrimaryImage.addMouseListener(mouseListener);
         mPrimaryImage.addMouseMotionListener(mouseMotionListener);
+    }
+
+    private void createLink() {
+        try {
+            List<ProducerLink.BBox> bBoxes = CVObjTracker.trackObj(primaryDir,
+                    mPrimaryProgress, new Rect2d(x, y, width, height), 500);
+            ProducerLink producerLink = new ProducerLink(linkId++, "Default Link", mPrimaryProgress, bBoxes);
+            String json = new Gson().toJson(producerLink);
+            log(json);
+            addLink(producerLink);
+        } catch (IOException e1) {
+            e1.printStackTrace();
+        }
+    }
+
+    private void addLink(ProducerLink producerLink) {
+        mProducerLinks.add(producerLink);
+        mListModel.addElement(producerLink);
+        for (ProducerLink.BBox bbox: producerLink.getbBoxes()) {
+            int frameNum = bbox.getFrame();
+            Frame frame = mFrameMap.get(frameNum);
+            if (frame == null) {
+                mFrameMap.put(frameNum, new Frame(frameNum, bbox));
+            } else {
+                frame.addBbox(bbox);
+            }
+        }
     }
 
     private void updatePrimaryImage(int currentX, int currentY, boolean temporal) {
@@ -321,7 +375,7 @@ public class Producer {
         }
         Graphics2D g2d = image.createGraphics();
         g2d.setColor(Color.GREEN);
-        g2d.drawRect(startX, startY, currentX - startX, currentY - startY);
+        g2d.drawRect(x, y, currentX - x, currentY - y);
         g2d.dispose();
         mPrimaryImage.setIcon(new ImageIcon(image));
     }

@@ -1,6 +1,6 @@
 package com.player.algo;
 
-import com.player.entity.Frame;
+import com.player.entity.ProducerLink;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -20,14 +20,14 @@ public class CVObjTracker {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
 
-    public static List<Frame.Link> trackObj(String filePath, int frameIndex, Rect2d area, int distance)
+    public static List<ProducerLink.BBox> trackObj(File directory, int frameIndex, Rect2d area, int distance)
             throws IOException {
         //add initial frame and bounding box
-        List<Frame.Link> ret = new ArrayList<>();
-        ret.add(new Frame.Link(frameIndex, area.clone()));
+        List<ProducerLink.BBox> ret = new ArrayList<>();
+        ret.add(new ProducerLink.BBox(frameIndex, area.clone()));
 
         //initialize first matrix from first frame
-        String imgPath = filePath + File.separator + String.format("%04d", frameIndex) + ".rgb";
+        String imgPath = directory + File.separator + directory.getName() + String.format("%04d", frameIndex) + ".rgb";
         File imgFile = new File(imgPath);
         InputStream in = new FileInputStream(imgFile);
         byte[] imgBytes = new byte[in.available()];
@@ -57,7 +57,7 @@ public class CVObjTracker {
         final int maxTrackIndex = distance > 0 ? frameIndex + distance : 9000;
         frameIndex++;
         for (; frameIndex <= maxTrackIndex && frameIndex <= 9000; frameIndex++){
-            imgPath = filePath + String.format("%04d", frameIndex) + ".rgb";
+            imgPath = directory + File.separator + directory.getName() + String.format("%04d", frameIndex) + ".rgb";
             imgFile = new File(imgPath);
             in = new FileInputStream(imgFile);
             imgBytes = new byte[in.available()];
@@ -73,7 +73,7 @@ public class CVObjTracker {
             ok = tracker.update(imgMat, area);
             //if object's bounding box found, add pair; skip otherwise
             if (ok){
-                ret.add(new Frame.Link(frameIndex, area.clone()));
+                ret.add(new ProducerLink.BBox(frameIndex, area.clone()));
             }
         }
 //        TrackerTest.showImg(TrackerTest.getImg(imgMat, trackingObj));
