@@ -119,7 +119,6 @@ class Utils {
 
     static Map<Integer, Frame> loadFrameMeta(File dir) {
         Map<Integer, Frame> frameMap = new HashMap<>();
-
         if (dir == null) {
             log("Error: dir is null");
             return frameMap;

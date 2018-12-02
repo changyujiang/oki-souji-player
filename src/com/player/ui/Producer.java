@@ -10,8 +10,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -242,6 +241,19 @@ public class Producer {
         }
         String json = new Gson().toJson(frameMap.values());
         log(json);
+
+        if (primaryDir == null || !primaryDir.exists()) {
+            // TODO popup error dialog
+            log("Error: primary dir is null");
+            return;
+        }
+        String filePath = primaryDir.getAbsolutePath() + File.separator + primaryDir.getName() + ".json";
+        try (Writer writer = new BufferedWriter(new OutputStreamWriter(
+                new FileOutputStream(filePath), "utf-8"))) {
+            writer.write(json);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     // TODO improve layout setting
