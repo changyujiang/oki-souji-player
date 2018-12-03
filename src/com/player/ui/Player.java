@@ -31,6 +31,7 @@ public class Player implements ChangeListener {
     private Stack<File> mPrevDirs = new Stack<File>();
 
     private JFrame mJFrame = new JFrame();
+    private JCheckBox showLinks = new JCheckBox("ShowLinks");
     private JLabel mVideoLabel = new JLabel();
     private JLabel mFrameLabel = new JLabel();
     private JSlider mSlider = new JSlider(JSlider.HORIZONTAL,
@@ -38,7 +39,7 @@ public class Player implements ChangeListener {
     private int mCurrentProgress = 0;
     private Stack<Integer> mPrevProgresses = new Stack<Integer>();
     private Map<Integer, Frame> mFrameMap = null;
-    private Clip mClip;
+    private Clip mClip = null;
 
     private Font font = new Font("Serif", Font.PLAIN, 15);
 
@@ -62,21 +63,21 @@ public class Player implements ChangeListener {
 
         JPanel actionPanel = initActionPanel();
         JPanel videoPanel = initVideo();
-        mJFrame.add(actionPanel, PAGE_START);
-        mJFrame.add(videoPanel, LINE_START);
+        mJFrame.add(BorderLayout.NORTH, actionPanel);
+        mJFrame.add(BorderLayout.CENTER,videoPanel);
         mJFrame.setVisible(true);
     }
 
     private void initJFrame() {
         mJFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         mJFrame.setTitle("Oki Player");
-        mJFrame.setSize(500,388);
+        mJFrame.setSize(600,388);
         mJFrame.setLocationRelativeTo(null);
     }
 
     private JPanel initActionPanel() {
         JPanel panel = new JPanel();
-        panel.setSize(500, 100);
+        panel.setSize(600, 100);
         FlowLayout layout = new FlowLayout();
         panel.setLayout(layout);
 
@@ -115,36 +116,91 @@ public class Player implements ChangeListener {
 
     private void importVideo() {
         mCurrentDir = selectFile(mJFrame);
+        if (mCurrentDir == null){
+            JOptionPane.showMessageDialog(mJFrame, "No file selected.");
+            return;
+        }
+
         mFrameMap = loadFrameMeta(mCurrentDir);
+
+        if (mClip != null) mClip.stop();
         mClip = loadAudio(mCurrentDir);
+        if (mClip == null){
+            JOptionPane.showMessageDialog(mJFrame, "No wav file found.");
+            return;
+        }
+
         mCurrentProgress = 1;
+        mPrevDirs.clear();
+        mPrevProgresses.clear();
         startPlay();
     }
 
     private void goBack() {
         if (!mPrevDirs.empty() && !mPrevProgresses.empty()){
             mCurrentDir = mPrevDirs.pop();
+
             mFrameMap = loadFrameMeta(mCurrentDir);
+
+            if (mClip != null) mClip.stop();
             mClip = loadAudio(mCurrentDir);
+            if (mClip == null){
+                JOptionPane.showMessageDialog(mJFrame, "No wav file found.");
+                return;
+            }
+
             mCurrentProgress = mPrevProgresses.pop();
             startPlay();
         }
     }
 
-    private void navigateTo(String folderPath, int frameNumber) {
+    private void navigateTo(String filePath, int frameNumber) {
+        File newCurrentDir = null;
+        try {
+            newCurrentDir = new File(filePath);
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        if (!newCurrentDir.exists()){
+            JOptionPane.showMessageDialog(mJFrame, "Linked file not found.");
+            return;
+        }
         mPrevDirs.push(mCurrentDir);
         mPrevProgresses.push(mCurrentProgress);
-        mCurrentDir = new File(folderPath);
+        mCurrentDir = newCurrentDir;
+
         mFrameMap = loadFrameMeta(mCurrentDir);
+
+        if (mClip != null) mClip.stop();
         mClip = loadAudio(mCurrentDir);
+        if (mClip == null){
+            JOptionPane.showMessageDialog(mJFrame, "No wav file found.");
+            return;
+        }
+
         mCurrentProgress = frameNumber >= 1 && frameNumber <= 9000 ? frameNumber : 1;
         startPlay();
     }
 
     private void startPlay() {
-        if (mCurrentDir != null){
+        if (mCurrentDir == null){
+            JOptionPane.showMessageDialog(mJFrame, "No file selected.");
+            return;
+        }
+        if (!primaryTimer.isRunning()) {
             primaryTimer.start();
+        }
+        if (mClip != null && !mClip.isRunning()){
             mClip.start();
+        }
+    }
+
+    private void stopPlay() {
+        if (primaryTimer.isRunning()) {
+            primaryTimer.stop();
+        }
+        if (mClip != null && mClip.isRunning()){
+            mClip.stop();
         }
     }
 
@@ -152,19 +208,24 @@ public class Player implements ChangeListener {
         BufferedImage frame = loadFrame(mCurrentDir, mCurrentProgress);
         if (frame == null) {
             log("Error: frame is null.");
-            primaryTimer.stop();
+            stopPlay();
         } else {
+            if(showLinks.isSelected()){
+                drawBox(mCurrentProgress, frame);
+            }
             mVideoLabel.setIcon(new ImageIcon(frame));
             mFrameLabel.setText("Playing Frame " + mCurrentProgress);
             if (mCurrentProgress % 100 - 1 == 0) {
                 mSlider.setValue(mCurrentProgress);
-                mClip.setFramePosition((int)(mCurrentProgress * audioFramesPerVideoFrame));
+                if (mClip != null){
+                    mClip.setFramePosition((int)(mCurrentProgress * audioFramesPerVideoFrame));
+                }
             }
             if (primaryTimer.isRunning()){
                 mCurrentProgress++;
             }
-            if (mCurrentProgress == 9000){
-                primaryTimer.stop();
+            if (mCurrentProgress > 9000){
+                stopPlay();
             }
         }
     }
@@ -172,42 +233,36 @@ public class Player implements ChangeListener {
     private void setupButtons(JPanel panel) {
         JButton resume = new JButton("Play/Resume");
         resume.addActionListener(e -> {
-            if (!primaryTimer.isRunning()) {
-                startPlay();
-            }
+            startPlay();
         });
         panel.add(resume);
 
         JButton pause = new JButton("Pause");
         pause.addActionListener(e -> {
-            if (primaryTimer.isRunning()) {
-                primaryTimer.stop();
-                mClip.stop();
-            }
+            stopPlay();
         });
         panel.add(pause);
 
         JButton stop = new JButton("Stop");
         stop.addActionListener(e -> {
-            if (primaryTimer.isRunning()) {
-                primaryTimer.stop();
-                mClip.stop();
-            }
+            stopPlay();
             mCurrentProgress = 1;
             updateFrame();
         });
         panel.add(stop);
+
+        panel.add(showLinks);
     }
 
     private JPanel initVideo() {
         JPanel panel = new JPanel();
         setupSlider();
         // 367, 308
-        panel.setSize(367, 308);
+        panel.setMinimumSize(new Dimension(367, 308));
         panel.setLayout(new BorderLayout());
-        panel.add(mVideoLabel, PAGE_START);
+        panel.add(BorderLayout.CENTER, mVideoLabel);
         mFrameLabel.setFont(font);
-        panel.add(mFrameLabel, PAGE_END);
+        panel.add(BorderLayout.SOUTH, mFrameLabel);
         panel.add(mSlider);
         mVideoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         mFrameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -224,13 +279,27 @@ public class Player implements ChangeListener {
     }
 
     private void checkLink(int x, int y){
+        if (mFrameMap.isEmpty()) return;
         Frame frame = mFrameMap.get(mCurrentProgress);
+        if (frame == null) return;
         List<Frame.Link> links = frame.getLinks();
-        for (Frame.Link link : links){
+        for (Frame.Link link : links) {
             if (x >= link.getX() && x <= link.getX() + link.getWidth() &&
-                    y >= link.getY() && y <= link.getY() + link.getHeight()){
+                    y >= link.getY() && y <= link.getY() + link.getHeight()) {
                 navigateTo(link.getPath(), link.getFrameNum());
             }
+        }
+    }
+
+    private void drawBox(int frameNum, BufferedImage image) {
+        Frame frame = mFrameMap.get(frameNum);
+        if (frame != null && !frame.getLinks().isEmpty()) {
+            Graphics2D g2d = image.createGraphics();
+            for (Frame.Link link: frame.getLinks()) {
+                g2d.setColor(Color.GREEN);
+                g2d.drawRect(link.getX(), link.getY(), link.getWidth(), link.getHeight());
+            }
+            g2d.dispose();
         }
     }
 

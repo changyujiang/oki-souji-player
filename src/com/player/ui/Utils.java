@@ -132,7 +132,8 @@ class Utils {
             for (Frame frame: frames) {
                 frameMap.put(frame.getFrameNum(), frame);
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
+            log("Error: no valid json file");
             e.printStackTrace();
         }
         return frameMap;
