@@ -23,7 +23,7 @@ import static java.awt.BorderLayout.*;
 public class Player implements ChangeListener {
 
     private final int FPS = 30;
-    private final int mDelay = 31;
+    private final int mDelay = 30;
     private final int audioFrameLength = 13232128;
     private final double audioFramesPerVideoFrame = (double)audioFrameLength / (double)9000;
 
@@ -71,7 +71,7 @@ public class Player implements ChangeListener {
     private void initJFrame() {
         mJFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         mJFrame.setTitle("Oki Player");
-        mJFrame.setSize(600,388);
+        mJFrame.setSize(600,420);
         mJFrame.setLocationRelativeTo(null);
     }
 
@@ -115,12 +115,12 @@ public class Player implements ChangeListener {
     }
 
     private void importVideo() {
-        mCurrentDir = selectFile(mJFrame);
-        if (mCurrentDir == null){
+        File newFile = selectFile(mJFrame);
+        if (newFile == null){
             JOptionPane.showMessageDialog(mJFrame, "No file selected.");
             return;
         }
-
+        mCurrentDir = newFile;
         mFrameMap = loadFrameMeta(mCurrentDir);
 
         if (mClip != null) mClip.stop();
@@ -259,11 +259,11 @@ public class Player implements ChangeListener {
         setupSlider();
         // 367, 308
         panel.setMinimumSize(new Dimension(367, 308));
-        panel.setLayout(new BorderLayout());
-        panel.add(BorderLayout.CENTER, mVideoLabel);
-        mFrameLabel.setFont(font);
-        panel.add(BorderLayout.SOUTH, mFrameLabel);
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.add(mVideoLabel);
         panel.add(mSlider);
+        mFrameLabel.setFont(font);
+        panel.add(mFrameLabel);
         mVideoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         mFrameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         mSlider.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -297,6 +297,7 @@ public class Player implements ChangeListener {
             Graphics2D g2d = image.createGraphics();
             for (Frame.Link link: frame.getLinks()) {
                 g2d.setColor(Color.GREEN);
+                g2d.drawString(link.getName(), link.getX(), link.getY());
                 g2d.drawRect(link.getX(), link.getY(), link.getWidth(), link.getHeight());
             }
             g2d.dispose();
