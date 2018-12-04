@@ -80,7 +80,7 @@ public class Producer {
     private void initFrame() {
         mJFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         mJFrame.setTitle("Oki Player");
-        mJFrame.setSize(734,408);
+        mJFrame.setSize(734,450);
         mJFrame.setLocationRelativeTo(null);
     }
 
@@ -246,6 +246,10 @@ public class Producer {
         JLabel linkLabel = new JLabel("Select Link:");
         mLinkList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         mLinkList.setLayoutOrientation(JList.VERTICAL);
+        mLinkList.setVisibleRowCount(3);
+
+        JScrollPane listScroller = new JScrollPane(mLinkList);
+        listScroller.setPreferredSize(new Dimension(100, 60));
 
         MouseListener mouseListener = new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
@@ -266,7 +270,7 @@ public class Producer {
         mLinkList.addMouseListener(mouseListener);
 
         panel.add(linkLabel);
-        panel.add(mLinkList);
+        panel.add(listScroller);
     }
 
     private void setupButtons(JPanel panel) {
