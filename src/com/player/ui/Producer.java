@@ -128,8 +128,9 @@ public class Producer {
     }
 
     private void importPrimaryVideo() {
-        primaryDir = selectFile(mJFrame);
-        if (primaryDir != null) {
+        File dir = selectFile(mJFrame);
+        if (dir != null) {
+            primaryDir = dir;
             mPrimaryProgress = 1;
             updatePrimaryImage(mPrimaryProgress);
             mFrameMap.clear();
@@ -139,8 +140,9 @@ public class Producer {
     }
 
     private void importSecondaryVideo() {
-        secondaryDir = selectFile(mJFrame);
-        if (secondaryDir != null) {
+        File dir = selectFile(mJFrame);
+        if (dir != null) {
+            secondaryDir = dir;
             mSecondaryProgress = 1;
             updateSecondaryImage(mSecondaryProgress);
             showMessage(mJFrame, "Secondary video imported.");
@@ -372,10 +374,12 @@ public class Producer {
         panel.setSize(367, 308);
         panel.setLayout(new BorderLayout());
         if (type == 0) {
+            mPrimaryImage.setIcon(new ImageIcon(getPlaceHolder()));
             panel.add(mPrimaryImage, PAGE_START);
             panel.add(mPrimaryFrameNumber, PAGE_END);
             panel.add(jSlider);
         } else if (type == 1) {
+            mSecondaryImage.setIcon(new ImageIcon(getPlaceHolder()));
             panel.add(mSecondaryImage, PAGE_START);
             panel.add(mSecondaryFrameNumber, PAGE_END);
             panel.add(jSlider);
