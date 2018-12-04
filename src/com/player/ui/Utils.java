@@ -146,4 +146,38 @@ class Utils {
         return new BufferedImage(cm, raster, isAlphaPremultiplied, null);
     }
 
+    private static final String ERROR_PRODUCER = "Producer Error";
+
+    static void showErrorMessage(JFrame jFrame, String em) {
+        JOptionPane.showMessageDialog(
+                jFrame,
+                em,
+                ERROR_PRODUCER,
+                JOptionPane.ERROR_MESSAGE);
+    }
+
+    static void showMessage(JFrame jFrame, String message) {
+        JOptionPane.showMessageDialog(
+                jFrame,
+                message
+        );
+    }
+
+    static JDialog showLoadingDialog(JFrame jFrame) {
+        final JDialog jDialog = new JDialog(jFrame, "Producer", true);
+        jDialog.add(BorderLayout.NORTH, new JLabel("Processing..."));
+        jDialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+        jDialog.setSize(300, 75);
+        jDialog.setLocationRelativeTo(jFrame);
+
+        jDialog.setVisible(true);
+
+        return jDialog;
+    }
+
+    static void hideLoadingDialog(JFrame jFrame, JDialog dialog) {
+        dialog.setVisible(false);
+        System.exit(0);
+    }
+
 }
