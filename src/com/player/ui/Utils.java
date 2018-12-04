@@ -45,6 +45,11 @@ class Utils {
         System.out.println(message);
     }
 
+    static BufferedImage getPlaceHolder() {
+        BufferedImage image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
+        return image;
+    }
+
     private static BufferedImage readImage(String fileName) {
         BufferedImage image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
 
