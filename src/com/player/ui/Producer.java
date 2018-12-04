@@ -133,6 +133,7 @@ public class Producer {
             primaryDir = dir;
             mPrimaryProgress = 1;
             updatePrimaryImage(mPrimaryProgress);
+            updateSlider();
             mFrameMap.clear();
             mListModel.clear();
             showMessage(mJFrame, "Primary video imported.");
@@ -145,7 +146,17 @@ public class Producer {
             secondaryDir = dir;
             mSecondaryProgress = 1;
             updateSecondaryImage(mSecondaryProgress);
+            updateSlider();
             showMessage(mJFrame, "Secondary video imported.");
+        }
+    }
+
+    private void updateSlider() {
+        if (mPrimaryProgress > 0 && mPrimaryProgress <= 9000) {
+            primarySlider.setValue(mPrimaryProgress);
+        }
+        if (mSecondaryProgress > 0 && mSecondaryProgress <= 9000) {
+            secondarySlider.setValue(mSecondaryProgress);
         }
     }
 
@@ -387,8 +398,17 @@ public class Producer {
         return panel;
     }
 
+    private JSlider primarySlider = new JSlider(JSlider.HORIZONTAL, 1, 9000, 1);
+    private JSlider secondarySlider = new JSlider(JSlider.HORIZONTAL, 1, 9000, 1);
+
     private JSlider setupSlider(int type) {
-        JSlider jSlider = new JSlider(JSlider.HORIZONTAL, 1, 9000, 1);
+        JSlider jSlider;
+        if (type == PRIMARY_VIDEO) {
+            jSlider = primarySlider;
+        } else {
+            jSlider = secondarySlider;
+        }
+        jSlider.setMinorTickSpacing(1);
         jSlider.addChangeListener(e ->{
             JSlider source = (JSlider)e.getSource();
             if (!source.getValueIsAdjusting()) {
@@ -399,7 +419,6 @@ public class Producer {
                 }
             }
         });
-        jSlider.setMinorTickSpacing(1);
         jSlider.setMajorTickSpacing(100);
         jSlider.setPaintTrack(true);
         jSlider.setBorder(BorderFactory.createEmptyBorder(0,0,10,0));
@@ -507,13 +526,11 @@ public class Producer {
     }
 
     private boolean primaryVideoExist() {
-        boolean ret = primaryDir!= null && primaryDir.exists() && primaryDir.isDirectory();
-        return ret;
+        return primaryDir!= null && primaryDir.exists() && primaryDir.isDirectory();
     }
 
     private boolean secondaryVideoExist() {
-        boolean ret = secondaryDir!= null && secondaryDir.exists() && secondaryDir.isDirectory();
-        return ret;
+        return secondaryDir!= null && secondaryDir.exists() && secondaryDir.isDirectory();
     }
 
     private ProducerLink getSelectedLink() {
