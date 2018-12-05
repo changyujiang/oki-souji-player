@@ -130,12 +130,13 @@ public class Producer {
     private void importPrimaryVideo() {
         File dir = selectFile(mJFrame);
         if (dir != null) {
+            mFrameMap.clear();
+            mListModel.clear();
+
             primaryDir = dir;
             mPrimaryProgress = 1;
             updatePrimaryImage(mPrimaryProgress);
             updateSlider();
-            mFrameMap.clear();
-            mListModel.clear();
             showMessage(mJFrame, "Primary video imported.");
         }
     }
