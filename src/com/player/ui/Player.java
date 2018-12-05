@@ -297,7 +297,9 @@ public class Player implements ChangeListener {
             Graphics2D g2d = image.createGraphics();
             for (Frame.Link link: frame.getLinks()) {
                 g2d.setColor(Color.GREEN);
-                g2d.drawString(link.getName(), link.getX(), link.getY());
+                if (link.getName() != null){
+                    g2d.drawString(link.getName(), link.getX(), link.getY());
+                }
                 g2d.drawRect(link.getX(), link.getY(), link.getWidth(), link.getHeight());
             }
             g2d.dispose();
