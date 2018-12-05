@@ -486,7 +486,7 @@ public class Producer {
     private void createLink() {
         try {
             List<ProducerLink.BBox> bBoxes = CVObjTracker.trackObj(primaryDir,
-                    mPrimaryProgress, new Rect2d(x, y, width, height), 300);
+                    mPrimaryProgress, new Rect2d(x, y, width, height), 150);
             ProducerLink producerLink = new ProducerLink(linkId++, "Default Link", mPrimaryProgress, bBoxes);
             showMessage(mJFrame, "Tracking completed.");
             String json = new Gson().toJson(producerLink);
